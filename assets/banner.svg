@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200" viewBox="0 0 600 200" role="img" aria-label="herdr-revdiff, a herdr plugin">
+  <rect width="600" height="200" fill="#0f111a"/>
+  <rect x="1" y="1" width="598" height="198" fill="none" stroke="#232838" stroke-width="2"/>
+  <rect x="56" y="58" width="4" height="52" fill="#0899ba"/>
+  <text x="76" y="96" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="40" font-weight="600" fill="#e6e9f2">herdr-<tspan fill="#0899ba">revdiff</tspan></text>
+  <text x="76" y="134" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#8a93a8">review diffs in herdr, deliver annotations to your agent</text>
+  <text x="544" y="176" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#4c5468">revdiff</text>
+</svg>

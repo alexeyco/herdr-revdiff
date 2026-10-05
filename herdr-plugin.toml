@@ -1,0 +1,23 @@
+# Manifest reference: https://herdr.dev/docs/plugins/
+id = "revdiff"
+name = "revdiff"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Runs revdiff in a new herdr tab and passes review annotations to the agent in the focused pane"
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["cargo", "build", "--release", "--locked"]
+
+[[actions]]
+id = "review"
+title = "Review with revdiff"
+description = "Open revdiff in a new tab; on quit, send annotations to the agent in the focused pane"
+contexts = ["workspace"]
+command = ["./target/release/herdr-revdiff"]
+
+[[panes]]
+id = "review"
+title = "revdiff"
+placement = "tab"
+command = ["./target/release/herdr-revdiff"]
