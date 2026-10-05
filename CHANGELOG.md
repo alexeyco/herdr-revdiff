@@ -4,38 +4,15 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## 0.1.0 - 2026-10-05
 
 ### Added
 
-- Automatic pruning: kept review output older than 7 days is removed best-effort at pane start (removal failures are logged as warnings, never fatal).
-- Integration test suite in `tests/`, driving the real binary with stub `herdr` and `revdiff` shell scripts (no network, no herdr install).
-- `aarch64-unknown-linux-gnu` release binaries, alongside the `x86_64` Linux and `aarch64`/`x86_64` macOS targets.
-- Releases now run the full CI suite (via `workflow_call`) before artifacts are built.
-- `SECURITY.md` with the vulnerability reporting process and trust model.
-
-### Changed
-
-- State files are now `<pid>-<millis>.out`, so two reviews started in the same millisecond no longer clobber each other.
-- Delivered agent prompts are capped at 64 KiB on a UTF-8 boundary; truncation appends a note pointing at the kept output file.
-- `REVDIFF_BIN` is canonicalized to an absolute path before exec (errors still show the path as given).
-- Release profile uses LTO, `strip`, `codegen-units = 1`, and `panic = "abort"` for smaller binaries.
-- Prettier is pinned to `3.9.6` in the Makefile and CI.
-
-### Fixed
-
-- Unreadable review output no longer silently drops annotations: a warning is logged on a clean exit, and any other exit code is a hard error that keeps the file.
-- Non-UTF-8 review output is decoded lossily instead of aborting.
-- No more `expect` in production paths.
-
-## 0.1.0
-
-### Added
-
-- `revdiff.review` action that resolves the repository directory from the herdr plugin context (`worktree.checkout_path` → `workspace_cwd` → `focused_pane_cwd`) and opens a `revdiff` plugin pane (`herdr plugin pane open --placement tab`) rooted there. The pane process runs revdiff as a direct child on the pane tty (argv exec, no shell), so the tab opens straight into the revdiff TUI. The review mode is selected automatically from the git state: bare working tree outside a git work tree, `--all-files` with no commits (or a single commit), `HEAD~1` for a clean tree with a parent commit, `--staged` for staged-only changes, and `--untracked` for unstaged or untracked changes.
-- Pane lifecycle: the action exports the resolved directory as `HERDR_REVIEWS_DIR`, so pane mode reviews that directory and runs revdiff with it as the working directory regardless of the runtime cwd. The pane process reads revdiff's exit code directly from the child process (no rc file, no start sentinel, no poll loop) and closes the pane on quiet success, falling back to closing the tab.
-- Agent delivery: annotations are sent to the agent pane that launched the action, captured at action time via `HERDR_REVIEWS_CALLER_PANE` / `HERDR_REVIEWS_CALLER_AGENT`, with `herdr agent prompt`, agent-agnostic across every agent kind herdr supports.
-- Edge behavior: no annotations on exit 0 with empty output; output file kept and error logged on revdiff failure; the pane prints the message and waits for Enter before auto-closing when no agent caller is present or when revdiff or delivery fails; review cancelled silently when the tab is closed early.
-- revdiff lookup: `REVDIFF_BIN` when it names an executable file (used verbatim; a non-executable value is a hard error), otherwise the first executable `revdiff` on `$PATH`, resolved to an absolute path; neither found is an actionable error. State under `HERDR_PLUGIN_STATE_DIR/reviews/` as a single `<ts>.out` file.
-- Documentation: README, how it works, development guide, contributing guide.
-- CI: fmt, clippy, tests, and release build on Linux and macOS; release workflow publishing binaries for `v*` tags.
+- `revdiff.review` action that opens revdiff in a new herdr tab rooted at the repository, straight into the TUI (the pane process execs revdiff directly, with no shell layer and no echoed command).
+- Review mode picked from read-only git probes: `HEAD~1` (last commit) for a clean tree with a parent commit, `--staged` for staged-only changes, `--untracked` for unstaged or untracked changes, and `--all-files` for a repository with no commits (or a single commit and a clean tree). Outside a git work tree, revdiff runs bare. The probes never write the git index.
+- Annotations delivered to the agent in the focused pane as a single prompt when revdiff exits with annotations; with no agent, or on a revdiff or delivery failure, the annotations are kept on disk and the path is printed, and the pane holds until Enter.
+- Review state kept as a single `<pid>-<millis>.out` file per review under `HERDR_PLUGIN_STATE_DIR/reviews/`, removed on delivery or a clean no-annotation exit, and pruned after 7 days.
+- Delivered prompts capped at 64 KiB on a UTF-8 boundary; when truncated, the full annotations stay in the kept file and the prompt says so.
+- revdiff resolved from `REVDIFF_BIN` (canonicalized before exec; a non-executable value is a hard error) or the first executable `revdiff` on `$PATH`, with an install hint when neither is found.
+- Release binaries for Linux (`x86_64`, `aarch64`) and macOS (`x86_64`, `aarch64`), built by a release pipeline that runs the full CI suite before publishing. The macOS binaries are unsigned.
+- Documentation: README, the behavioral spec in `docs/how-it-works.md`, a development guide, a contributing guide, and a security policy.
