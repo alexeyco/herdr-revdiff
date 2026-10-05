@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check Cargo.toml and herdr-plugin.toml versions match
+        shell: bash
+        run: |
+          cargo_version=$(grep -m1 '^version = "' Cargo.toml | sed -E 's/^version = "(.*)"$/\1/')
+          plugin_version=$(grep -m1 '^version = "' herdr-plugin.toml | sed -E 's/^version = "(.*)"$/\1/')
+          if [ "$cargo_version" != "$plugin_version" ]; then
+            echo "::error::version mismatch: Cargo.toml has $cargo_version, herdr-plugin.toml has $plugin_version. Keep both in sync."
+            exit 1
+          fi
+          echo "versions match: $cargo_version"
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read rust-version from Cargo.toml
+        id: msrv
+        shell: bash
+        run: echo "msrv=$(grep -m1 '^rust-version = "' Cargo.toml | sed -E 's/^rust-version = "(.*)"$/\1/')" >> "$GITHUB_OUTPUT"
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          toolchain: ${{ steps.msrv.outputs.msrv }}
+      - run: cargo check --locked
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: npx --yes prettier@3.9.6 --check "**/*.md"
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+      - run: cargo test --locked
+      - run: cargo build --release --locked

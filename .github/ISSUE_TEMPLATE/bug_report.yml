@@ -1,0 +1,39 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I am running a supported herdr version (see README → Requirements)
+        - label: I have revdiff >= 1.12 on PATH (or set REVDIFF_BIN), or the failing step does not need it
+        - label: I searched existing issues for this problem
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the exact error message from the action or from `herdr plugin log list --plugin revdiff`.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `herdr ...`
+        2. Press ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      value: |
+        - OS:
+        - herdr --version:
+        - revdiff --version:
+        - Invocation method:
+    validations:
+      required: true
